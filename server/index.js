@@ -19,7 +19,7 @@ const io = new Server(server, {
 io.use(authSocketMiddleware);
 
 io.on('connection', (socket) => {
-    registerQuizHandlers(socket);
+    registerQuizHandlers(socket, io);
 });
 
 export default server;

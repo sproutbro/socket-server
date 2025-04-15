@@ -8,17 +8,22 @@ export function authSocketMiddleware(socket, next) {
         const cookies = cookie.parse(socket.handshake.headers.cookie || '');
         const token = cookies.auth_token;
 
-        if (!token) {
-            return next();
-            // return next(new Error('No auth token provided'));
+        if (token) {
+            const user = jwt.verify(token, JWT_SECRET);
+            if (user.id && user.nickname) {
+                socket.user = { id: user.id, nickname: user.nickname };
+            }
+        } else {
+            socket.user = { nickname: socket.id.slice(0, 5) };
         }
 
-        const user = jwt.verify(token, JWT_SECRET);
-        if (user.id && user.nickname) {
-            socket.user = { id: user.id, nickname: user.nickname };
-        }
+        console.log(`✅ [socket] User connected: ${socket.user.nickname}`);
         next();
     } catch (err) {
         next(new Error('Invalid or expired token'));
     }
+
+    socket.on('disconnect', () => {
+        console.log(`❌ [socket] User disconnected: ${socket.user.nickname}`);
+    });
 }

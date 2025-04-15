@@ -3,23 +3,20 @@ import http from 'http';
 import { Server } from 'socket.io';
 import { authSocketMiddleware } from './authSocket.js';
 import { registerQuizHandlers } from '../sockets/quiz.js';
-import dotenv from 'dotenv';
 
-dotenv.config();
+const ORIGIN = process.env.ORIGIN;
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:3014',
+        origin: ORIGIN,
         credentials: true
     }
 });
 
-io.use(authSocketMiddleware);
-
-io.on('connection', (socket) => {
-    registerQuizHandlers(socket, io);
-});
+const quizNamespace = io.of("/quiz");
+quizNamespace.use(authSocketMiddleware);
+registerQuizHandlers(quizNamespace);
 
 export default server;

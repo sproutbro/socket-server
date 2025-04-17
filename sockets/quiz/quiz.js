@@ -1,11 +1,24 @@
+import { findScoreById, findUser, saveNewUser, updateScore } from "../../server/db/quiz.js";
+
 let players = {};
 
 export function registerQuizHandlers(io) {
     let quizData = JSON.parse(JSON.stringify(quizData1));
 
-    io.on('connection', (socket) => {
+    io.on('connection', async (socket) => {
+        const userId = socket?.user?.id;
         const nickname = socket?.user?.nickname;
-        players[socket.id] = { nickname, score: 0 };
+        let score = 0;
+
+        if (userId) {
+            const isUser = await findUser(userId);
+            if (!isUser) await saveNewUser(userId);
+            score = await findScoreById(userId);
+        }
+
+        players[socket.id] = { nickname, score };
+
+
         io.emit("updatePlayers", players);
         socket.emit("updateQuiz", quizData);
         socket.broadcast.emit("updateChat", `${nickname} 님 연결`);
@@ -25,9 +38,12 @@ export function registerQuizHandlers(io) {
 
 
     function socketAnswer(socket) {
-        socket.on("answer", ({ key, answer }) => {
+        socket.on("answer", async ({ key, answer }) => {
             if (answerData[key] === answer) {
                 players[socket.id].score += 10;
+
+                if (socket?.user?.id) await updateScore(socket?.user?.id, players[socket.id].score);
+
                 io.emit("updatePlayers", players);
                 io.emit("updateChat", `${socket?.user?.nickname}님 ${key}번 정답`);
 

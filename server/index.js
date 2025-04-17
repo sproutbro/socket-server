@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import { authSocketMiddleware } from './authSocket.js';
-import { registerQuizHandlers } from '../sockets/quiz.js';
+import { registerQuizHandlers } from '../sockets/quiz/quiz.js';
 
 const ORIGIN = process.env.ORIGIN;
 

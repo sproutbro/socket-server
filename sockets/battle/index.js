@@ -1,43 +1,26 @@
-import Player from "./class/Player.js";
+import { createPlayer } from "./event/player.js";
 
 export function battleHandlers(io) {
-    let players = {};
+    const users = new Map();
 
     io.on('connection', (socket) => {
-        players[socket.id] = new Player(socket);
+        const player = createPlayer(socket);
+        users.set(socket.id, player);
 
-        Object.keys(players).forEach((key) => {
-            socket.emit("newPlayer", { key, player: players[key] });
-        })
-
-        socket.broadcast.emit("newPlayer", { key: socket.id, player: players[socket.id] });
-
-        socket.on("drawMove", () => socket.emit("drawMove", players[socket.id]));
-
-        socket.on("movePlayer", ({ x, y }) => {
-            players[socket.id].x = x;
-            players[socket.id].y = y;
-            players[socket.id].move = 0;
-            io.emit("movePlayer", { key: socket.id, x, y });
-            countMove(players[socket.id]);
-        });
+        socket.broadcast.emit('user-joined', users.get(socket.id));
+        socket.emit("current-users", Array.from(users.values()));
 
         socket.on('disconnect', () => {
-            delete players[socket.id];
-            socket.broadcast.emit('disconnectPlayer', socket.id);
+            users.delete(socket.id);
+            socket.broadcast.emit('user-disconnect', socket.id);
         });
 
-        function countMove(player) {
-            socket.emit("drawMoveGa", player.move);
-            const intervalId = setInterval(() => {
-                player.move++;
-                socket.emit("drawMoveGa", player.move);
-
-                if (player.maxMove === player.move) {
-                    clearInterval(intervalId);
-                }
-            }, 1000);
-        }
+        socket.on("player-move", ({ x, y }) => {
+            const player = users.get(socket.id);
+            player.x = x;
+            player.y = y;
+            console.log(users.get(socket.id));
+            io.emit("player-move", player);
+        });
     })
-
 }

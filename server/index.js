@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import { authSocketMiddleware } from './authSocket.js';
 import { registerQuizHandlers } from '../sockets/quiz/quiz.js';
 import { battleHandlers } from '../sockets/battle/index.js';
+import { cityHandlers } from '../sockets/city/index.js';
 
 const ORIGIN = process.env.ORIGIN;
 
@@ -23,5 +24,10 @@ registerQuizHandlers(quizNamespace);
 const battleNamespace = io.of("/battle");
 battleNamespace.use(authSocketMiddleware);
 battleHandlers(battleNamespace);
+
+const cityNamespace = io.of("/city");
+cityNamespace.use(authSocketMiddleware);
+cityHandlers(cityNamespace);
+
 
 export default server;
